@@ -45,7 +45,7 @@ Separates linear and spiral tracks from a single experiment.  Could be updated t
 
 Plot speed/time graphs from prttrck
 
-++ prttrckNew.m  REQUIRES UPDATING
++ prttrckNew.m  REQUIRES UPDATING
 
 Particle Tracking main script.  Needs to have the linear vs spiral sorting included in the main script/turn LvsSp1 into a function?
 
