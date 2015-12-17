@@ -1,5 +1,5 @@
 # MPusillaPhototaxis
-Porject investigating the characterisation and dynamics of the common pico eukaryote Micromonas pusilla, focussing specifically on the motion in response to an external light stimulus.
+Project investigating the characterisation and dynamics of the common pico eukaryote Micromonas pusilla, focussing specifically on the motion in response to an external light stimulus.
 
 ## CODE IN REPOSITORY:
 
