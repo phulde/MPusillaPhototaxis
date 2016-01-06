@@ -1,9 +1,12 @@
 % ########################################################################
-%  PARTICLE LOCATOR FOR TRAJECORY EXPERIMENTS
+%  PARTICLE LOCATOR FOR TRAJECTORY EXPERIMENTS
 %  AUTHOR:  RICHARD HENSHAW
 %  REQUIRES: bpass.m, pkfnd.m, cntrd.m
 %  Takes an image set (in a folder), and locates the particles for that
 %  film
+%  VERSIONING:
+%  V2: 06/01/2016
+%  Remove need to imread each image twice, decrease computational time
 %  INPUTS:
 %  .txt file containing frametime data
 %  Folder containing the source images
@@ -46,49 +49,43 @@ time(1,3)=0;
 for i=2:r(1,1)
     time(i,3)=time(i-1,3)+(1./FpS);
 end
-%%  Load the images in the directory into the images array
+%%  Load the images in the directory into the images array, FRAMENO
 disp('Load image data')
+FRAMENO = 1;
+t = 0;
 for i=3:size(filelist,1)
     %// filelist is not a folder
     if filelist(i).isdir ~= true
-        fname = filelist(i).name;
-        % if file extension is TFF
         if strcmp( fname(size(fname,2)-3:size(fname,2)) ,'.tiff'  ) == 1
-            tmp = imread([somefolder fname]);
-            % convert it to grayscale image if tmp is a color
-            % image/picture
-            if size(tmp,3) == 3
-            tmp = rgb2gray(tmp);
-            % resize of image
-            % tmp = imresize(tmp,[320 240],'bilinear');
-            % put it into images buffer
-            images(:,:,count) = tmp;           
+            fname = filelist(i).name;
+            tmp = double(imread([somefolder fname]));
+            images(:,:,FRAMENO) = tmp;           
             % images = [images tmp];
             disp([fname ' loaded']);
-            count=count+1;
+            % Now loaded, particle locate and store locations
+            b = bpass(images(:,:,FRAMENO),1,10);
+            pk = pkfnd(b,20,11);
+            cnt = cntrd(b,pk,11);
+            % Convert Rg to R using spherical approximation
+            r=cnt(:,4);
+            r(:,2)=sqrt((5/3).*r(:,1).*r(:,1));
+            r(:,3)=sqrt((5/3).*cnt(:,4).*cnt(:,4));
+            s=size(cnt(:,1));
+            R(t+1:s(1,1)+t,1)=r(:,3);
+            % Add number of rows to pos then put in the cnt, time arrays
+            % directly
+            for j = 1:3
+                pos(t+1:s(1,1)+t,j) = 0;
             end
+            % Then insert the data
+            pos(t+1:s(1,1)+t,1)=cnt(:,1); %x
+            pos(t+1:s(1,1)+t,2)=cnt(:,2); %y
+            pos(t+1:s(1,1)+t,3)=time(FRAMENO,3); %time
+            t = size(pos(:,1));
+            FRAMENO=FRAMENO+1;
+            clear b pk cnt 
         end
     end
 end
-%%  Locate particles and store locations
-disp('Locate particles and store their locations')
-FRAMENO = 1
-for i=STARTFRAME:(size(filelist,1)-4)
-    fname=filelist(i).name;
-    a=double(imread([somefolder fname]));
-    b=bpass(a,1,10);
-    pk=pkfnd(b,20,11);
-    cnt=cntrd(b,pk,11);
-     %Convert Rg to R, using spherical approximation
-    r=cnt(:,4);
-    r(:,2)=sqrt((5/3).*r(:,1).*r(:,1));
-    r(:,3)=sqrt((5/3).*cnt(:,4).*cnt(:,4));
-    s=size(cnt(:,1));
-    R(t+1:s(1,1)+t,1)=r(:,3);
-    pos(t+1:s(1,1)+t,1)=cnt(:,1); %x
-    pos(t+1:s(1,1)+t,2)=cnt(:,2); %y
-    pos(t+1:s(1,1)+t,3)=time(FRAMENO,3); %time
-    t=size(pos(:,1));
-    FRAMENO=FRAMENO+1
-end
+disp('Particles located, saving output...')
 saveas([strPos , '.mat'],'pos');
